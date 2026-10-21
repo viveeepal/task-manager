@@ -1,0 +1,15 @@
+
+[build]
+  command = "npm --prefix client install && npm --prefix client run build"
+  publish = "client/dist"
+
+[functions]
+  directory = "netlify/functions"
+  external_node_modules = ["express", "pg", "serverless-http"]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  force = true
+  from = "/api/*"
+  status = 200
+  to = "/.netlify/functions/api/:splat"

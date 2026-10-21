@@ -5,30 +5,55 @@ import db from "./config/db.js"
 import route from "./routes/taskroute.js";
 import authRoutes from "./routes/authRoutes.js";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+app.set("trust proxy", 1);
+const PgSessionStore = connectPgSimple(session);
+// const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin : "http://localhost:5173",
+    origin : [
+      "http://localhost:5173",
+      "https://dodayilytasks.netlify.app"
+    ],
     credentials: true,
 }));
 
 app.use(express.json());
 
+// app.use(session({
+//     secret: process.env.SESSION_SECRET,
+//     resave: false,
+//     saveUninitialized: false,
+//     cookie:{
+//         httpOnly: true,
+//         secure: process.env.NODE_ENV === "production",
+//         sameSite: "lax",
+//         maxAge: 24 * 60 * 60 * 1000
+//     }
+// }))
+
+
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie:{
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000
-    }
-}))
+  store: new PgSessionStore({
+    pool: db,
+    tableName: "session",
+    createTableIfMissing: true,
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
+
 
 app.get("/",(req,res) => {
     res.send("Task is running through api");
@@ -56,6 +81,8 @@ app.get("/api/health", async(req,res) => {
     }
 })
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}.`);
-} )
+// app.listen(port, () => {
+//     console.log(`Server is running on port ${port}.`);
+// } )
+
+export default app;
